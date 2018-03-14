@@ -77,6 +77,9 @@ class Value(object):
     def contents(self):
         return self._item.contents()
 
+    def plain_text(self):
+        return self._item.plain_text()
+
     def merge_over(self, value):
         self._item = self._item.merge_over(value._item)
         return self

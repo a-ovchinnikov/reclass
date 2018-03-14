@@ -30,6 +30,9 @@ class CompItem(Item):
     def contents(self):
         return self._items
 
+    def plain_text(self):
+        return ''.join([ str(i.plain_text()) for i in self._items ])
+
     def allRefs(self):
         return self._allRefs
 

@@ -7,9 +7,11 @@
 # Released under the terms of the Artistic Licence 2.0
 #
 
+import copy
+
 from reclass.settings import Settings
 from reclass.datatypes import Parameters
-from reclass.errors import InfiniteRecursionError, InterpolationError
+from reclass.errors import InfiniteRecursionError, InterpolationError, ResolveErrorList
 import unittest
 try:
     import unittest.mock as mock
@@ -18,6 +20,17 @@ except ImportError:
 
 SIMPLE = {'one': 1, 'two': 2, 'three': 3}
 SETTINGS = Settings()
+
+class MockDevice(object):
+    def __init__(self):
+        self._text = ''
+
+    def write(self, s):
+        self._text += s
+        return
+
+    def text(self):
+        return self._text
 
 class TestParameters(unittest.TestCase):
 
@@ -499,6 +512,25 @@ class TestParametersNoMock(unittest.TestCase):
         with self.assertRaises(InterpolationError) as error:
             p1.interpolate()
         self.assertEqual(error.exception.message, "-> \n   Bad references, at gamma\n      ${beta}")
+
+    def test_resolve_error_on_missing_reference(self):
+        # beta key is missing
+        p1 = Parameters({'alpha': '${beta}', 'gamma': 5, 'delta': 5}, SETTINGS, '')
+        with self.assertRaises(ResolveErrorList) as error:
+            p1.interpolate()
+        self.assertEqual(error.exception.message, "-> \n   Cannot resolve ${beta}, at alpha")
+
+    def test_ignore_resolve_error_on_missing_reference(self):
+        # beta key is missing, but ignore_missing_references is set
+        settings = copy.deepcopy(SETTINGS)
+        settings.ignore_missing_references = True
+        p1 = Parameters({'alpha': '${beta}', 'gamma': '${delta}', 'delta': 5}, settings, '')
+        r1 = {'alpha': '${beta}', 'gamma': 5, 'delta': 5}
+        err1 = "[WARNING] Reference '${beta}' undefined\n"
+        with mock.patch('sys.stderr', new=MockDevice()) as std_err:
+            p1.interpolate()
+        self.assertEqual(p1.as_dict(), r1)
+        self.assertEqual(std_err.text(), err1)
 
 if __name__ == '__main__':
     unittest.main()

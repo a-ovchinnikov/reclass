@@ -7,7 +7,8 @@
 # Released under the terms of the Artistic Licence 2.0
 #
 
-import posix, sys
+import posix
+import sys
 import traceback
 
 from reclass.defaults import REFERENCE_SENTINELS, EXPORT_SENTINELS
@@ -181,6 +182,25 @@ class ResolveError(InterpolationError):
     def _get_error_message(self):
         msg = 'Cannot resolve {0}'.format(self.reference.join(REFERENCE_SENTINELS)) + self._add_context_and_uri()
         return [ msg ]
+
+
+class ResolveErrorList(InterpolationError):
+    def __init__(self):
+        super(ResolveErrorList, self).__init__(msg=None)
+        self.resolve_errors = []
+        self._traceback = False
+
+    def add(self, resolve_error):
+        self.resolve_errors.append(resolve_error)
+
+    def have_errors(self):
+        return len(self.resolve_errors) > 0
+
+    def _get_error_message(self):
+        msgs = []
+        for e in self.resolve_errors:
+            msgs.extend(e._get_error_message())
+        return msgs
 
 
 class InvQueryError(InterpolationError):

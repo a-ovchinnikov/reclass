@@ -5,6 +5,7 @@
 #
 
 from item import Item
+from reclass.defaults import REFERENCE_SENTINELS
 from reclass.settings import Settings
 from reclass.utils.dictpath import DictPath
 from reclass.errors import ResolveError
@@ -37,6 +38,10 @@ class RefItem(Item):
 
     def contents(self):
         return self._items
+
+    def plain_text(self):
+        strings = [ str(i.plain_text()) for i in self._items ]
+        return '{0}{1}{2}'.format(REFERENCE_SENTINELS[0], ''.join(strings), REFERENCE_SENTINELS[1])
 
     def allRefs(self):
         return self._allRefs

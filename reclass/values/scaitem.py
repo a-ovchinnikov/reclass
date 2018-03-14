@@ -17,6 +17,9 @@ class ScaItem(Item):
     def contents(self):
         return self._value
 
+    def plain_text(self):
+        return str(self._value)
+
     def merge_over(self, item):
         if item.type == Item.SCALAR:
             return self
