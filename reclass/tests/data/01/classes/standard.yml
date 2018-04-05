@@ -1,4 +1,0 @@
-parameters:
-  int: 1
-  string: '1'
-  bool: True

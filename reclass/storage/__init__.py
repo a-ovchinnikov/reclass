@@ -14,18 +14,14 @@ class NodeStorageBase(object):
 
     name = property(lambda self: self._name)
 
-    def get_node(self, name, settings):
+    def get_node(self, name, merge_base=None):
         msg = "Storage class '{0}' does not implement node entity retrieval."
         raise NotImplementedError(msg.format(self.name))
 
-    def get_class(self, name, environment, settings):
+    def get_class(self, name):
         msg = "Storage class '{0}' does not implement class entity retrieval."
         raise NotImplementedError(msg.format(self.name))
 
     def enumerate_nodes(self):
         msg = "Storage class '{0}' does not implement node enumeration."
-        raise NotImplementedError(msg.format(self.name))
-
-    def path_mangler(self):
-        msg = "Storage class '{0}' does not implement path_mangler."
         raise NotImplementedError(msg.format(self.name))

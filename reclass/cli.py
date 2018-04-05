@@ -11,34 +11,33 @@ import sys, os, posix
 
 from reclass import get_storage, output
 from reclass.core import Core
-from reclass.settings import Settings
 from reclass.config import find_and_read_configfile, get_options
-from reclass.defaults import *
 from reclass.errors import ReclassException
+from reclass.defaults import *
 from reclass.constants import MODE_NODEINFO
 from reclass.version import *
 
 def main():
     try:
-        defaults = {'no_refs' : OPT_NO_REFS,
-                    'pretty_print' : OPT_PRETTY_PRINT,
+        defaults = {'pretty_print' : OPT_PRETTY_PRINT,
                     'output' : OPT_OUTPUT
                    }
         defaults.update(find_and_read_configfile())
+        options = get_options(RECLASS_NAME, VERSION, DESCRIPTION,
+                              defaults=defaults)
 
-        options = get_options(RECLASS_NAME, VERSION, DESCRIPTION, defaults=defaults)
-        storage = get_storage(options.storage_type, options.nodes_uri, options.classes_uri)
+        storage = get_storage(options.storage_type, options.nodes_uri,
+                              options.classes_uri, default_environment='base')
         class_mappings = defaults.get('class_mappings')
-        defaults.update(vars(options))
-        settings = Settings(defaults)
-        reclass = Core(storage, class_mappings, settings)
+        reclass = Core(storage, class_mappings, ignore_class_notfound=options.ignore_class_notfound, ignore_class_regexp=options.ignore_class_regexp)
 
         if options.mode == MODE_NODEINFO:
             data = reclass.nodeinfo(options.nodename)
+
         else:
             data = reclass.inventory()
 
-        print output(data, options.output, options.pretty_print, options.no_refs)
+        print output(data, options.output, options.pretty_print)
 
     except ReclassException, e:
         e.exit_with_message(sys.stderr)

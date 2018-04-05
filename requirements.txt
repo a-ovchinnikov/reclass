@@ -1,4 +1,1 @@
-pyparsing
 pyyaml
-pygit2
-six

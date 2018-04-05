@@ -1,3 +1,0 @@
----
-others:
-  - The escaping of references changes how the constructs '\${xxx}' and '\\${xxx}' are rendered.

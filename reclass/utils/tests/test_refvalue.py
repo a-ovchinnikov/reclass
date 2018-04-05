@@ -7,18 +7,16 @@
 # Released under the terms of the Artistic Licence 2.0
 #
 
-import pyparsing as pp
-
-from reclass.settings import Settings
-from reclass.values.value import Value
-from reclass.errors import ResolveError, ParseError
+from reclass.utils.refvalue import RefValue
+from reclass.defaults import PARAMETER_INTERPOLATION_SENTINELS, \
+        PARAMETER_INTERPOLATION_DELIMITER
+from reclass.errors import UndefinedVariableError, \
+        IncompleteInterpolationError
 import unittest
 
-SETTINGS = Settings()
-
 def _var(s):
-    return '%s%s%s' % (SETTINGS.reference_sentinels[0], s,
-                       SETTINGS.reference_sentinels[1])
+    return '%s%s%s' % (PARAMETER_INTERPOLATION_SENTINELS[0], s,
+                       PARAMETER_INTERPOLATION_SENTINELS[1])
 
 CONTEXT = {'favcolour':'yellow',
            'motd':{'greeting':'Servus!',
@@ -33,18 +31,18 @@ CONTEXT = {'favcolour':'yellow',
 def _poor_mans_template(s, var, value):
     return s.replace(_var(var), value)
 
-class TestValue(unittest.TestCase):
+class TestRefValue(unittest.TestCase):
 
     def test_simple_string(self):
         s = 'my cat likes to hide in boxes'
-        tv = Value(s, SETTINGS, '')
+        tv = RefValue(s)
         self.assertFalse(tv.has_references())
-        self.assertEquals(tv.render(CONTEXT, None), s)
+        self.assertEquals(tv.render(CONTEXT), s)
 
     def _test_solo_ref(self, key):
         s = _var(key)
-        tv = Value(s, SETTINGS, '')
-        res = tv.render(CONTEXT, None)
+        tv = RefValue(s)
+        res = tv.render(CONTEXT)
         self.assertTrue(tv.has_references())
         self.assertEqual(res, CONTEXT[key])
 
@@ -65,65 +63,65 @@ class TestValue(unittest.TestCase):
 
     def test_single_subst_bothends(self):
         s = 'I like ' + _var('favcolour') + ' and I like it'
-        tv = Value(s, SETTINGS, '')
+        tv = RefValue(s)
         self.assertTrue(tv.has_references())
-        self.assertEqual(tv.render(CONTEXT, None),
+        self.assertEqual(tv.render(CONTEXT),
                          _poor_mans_template(s, 'favcolour',
                                              CONTEXT['favcolour']))
 
     def test_single_subst_start(self):
         s = _var('favcolour') + ' is my favourite colour'
-        tv = Value(s, SETTINGS, '')
+        tv = RefValue(s)
         self.assertTrue(tv.has_references())
-        self.assertEqual(tv.render(CONTEXT, None),
+        self.assertEqual(tv.render(CONTEXT),
                          _poor_mans_template(s, 'favcolour',
                                              CONTEXT['favcolour']))
 
     def test_single_subst_end(self):
         s = 'I like ' + _var('favcolour')
-        tv = Value(s, SETTINGS, '')
+        tv = RefValue(s)
         self.assertTrue(tv.has_references())
-        self.assertEqual(tv.render(CONTEXT, None),
+        self.assertEqual(tv.render(CONTEXT),
                          _poor_mans_template(s, 'favcolour',
                                              CONTEXT['favcolour']))
 
     def test_deep_subst_solo(self):
-        motd = SETTINGS.delimiter.join(('motd', 'greeting'))
-        s = _var(motd)
-        tv = Value(s, SETTINGS, '')
+        var = PARAMETER_INTERPOLATION_DELIMITER.join(('motd', 'greeting'))
+        s = _var(var)
+        tv = RefValue(s)
         self.assertTrue(tv.has_references())
-        self.assertEqual(tv.render(CONTEXT, None),
-                         _poor_mans_template(s, motd,
+        self.assertEqual(tv.render(CONTEXT),
+                         _poor_mans_template(s, var,
                                              CONTEXT['motd']['greeting']))
 
     def test_multiple_subst(self):
-        greet = SETTINGS.delimiter.join(('motd', 'greeting'))
+        greet = PARAMETER_INTERPOLATION_DELIMITER.join(('motd', 'greeting'))
         s = _var(greet) + ' I like ' + _var('favcolour') + '!'
-        tv = Value(s, SETTINGS, '')
+        tv = RefValue(s)
         self.assertTrue(tv.has_references())
         want = _poor_mans_template(s, greet, CONTEXT['motd']['greeting'])
         want = _poor_mans_template(want, 'favcolour', CONTEXT['favcolour'])
-        self.assertEqual(tv.render(CONTEXT, None), want)
+        self.assertEqual(tv.render(CONTEXT), want)
 
     def test_multiple_subst_flush(self):
-        greet = SETTINGS.delimiter.join(('motd', 'greeting'))
+        greet = PARAMETER_INTERPOLATION_DELIMITER.join(('motd', 'greeting'))
         s = _var(greet) + ' I like ' + _var('favcolour')
-        tv = Value(s, SETTINGS, '')
+        tv = RefValue(s)
         self.assertTrue(tv.has_references())
         want = _poor_mans_template(s, greet, CONTEXT['motd']['greeting'])
         want = _poor_mans_template(want, 'favcolour', CONTEXT['favcolour'])
-        self.assertEqual(tv.render(CONTEXT, None), want)
+        self.assertEqual(tv.render(CONTEXT), want)
 
     def test_undefined_variable(self):
         s = _var('no_such_variable')
-        tv = Value(s, SETTINGS, '')
-        with self.assertRaises(ResolveError):
-            tv.render(CONTEXT, None)
+        tv = RefValue(s)
+        with self.assertRaises(UndefinedVariableError):
+            tv.render(CONTEXT)
 
     def test_incomplete_variable(self):
-        s = SETTINGS.reference_sentinels[0] + 'incomplete'
-        with self.assertRaises(ParseError):
-            tv = Value(s, SETTINGS, '')
+        s = PARAMETER_INTERPOLATION_SENTINELS[0] + 'incomplete'
+        with self.assertRaises(IncompleteInterpolationError):
+            tv = RefValue(s)
 
 if __name__ == '__main__':
     unittest.main()
