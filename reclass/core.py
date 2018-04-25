@@ -136,6 +136,7 @@ class Core(object):
                 # on every iteration, we merge the result of the recursive
                 # descent into what we have so far…
                 merge_base.merge(descent)
+                print "DDD merge_base + descent", merge_base
                 seen[klass] = True
 
         # … and finally, we merge what we have at this level into the
